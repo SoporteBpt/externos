@@ -1,4 +1,3 @@
-
 import streamlit as st
 import pandas as pd
 import plotly.express as px
@@ -6,17 +5,34 @@ import folium
 from folium.plugins import HeatMap
 from streamlit_folium import st_folium
 from fpdf import FPDF
-import os
+import requests
+from io import BytesIO
 
+# Configuración de la página
 st.set_page_config(layout="wide", page_title="Panel Vendedores Externos", page_icon="📍")
 
-# Rutas
-archivo = "D:\Desktop2\TRABAJO BD\PROYECTOS_DB\IDEMEFA\EXTERNO\GESTIONEXTERNA.xlsx"
-img_base = "D:\Desktop2\TRABAJO BD\PROYECTOS_DB\IDEMEFA\EXTERNO"
+# ID del archivo de Google Drive (extraído de la URL compartida)
+FILE_ID = "1Pe0W62WZff6MHkQs_MnY4bu6E4NMAR7U"
+GD_URL = f"https://docs.google.com/spreadsheets/d/{FILE_ID}/export?format=xlsx"
+
+# Función para cargar datos desde Google Drive
+@st.cache_data(ttl=3600)  # Cache por 1 hora
+def load_data():
+    try:
+        response = requests.get(GD_URL)
+        response.raise_for_status()  # Lanza error si la descarga falla
+        excel_file = BytesIO(response.content)
+        
+        viajes = pd.read_excel(excel_file, sheet_name="VIAJES")
+        formularios = pd.read_excel(excel_file, sheet_name="FORMULARIO")
+        
+        return viajes, formularios
+    except Exception as e:
+        st.error(f"Error al cargar datos desde Google Drive: {str(e)}")
+        st.stop()
 
 # Carga de datos
-viajes = pd.read_excel(archivo, sheet_name="VIAJES")
-formularios = pd.read_excel(archivo, sheet_name="FORMULARIO")
+viajes, formularios = load_data()
 
 # Preprocesamiento fechas
 viajes["FECHA"] = pd.to_datetime(viajes["FECHA"])
@@ -92,11 +108,11 @@ with tab2:
                 st.markdown(f"🧍 **Visitado:** {row['¿A quién visitaste?']}")
                 st.markdown(f"🗒️ **Notas:** {row['Notas adicionales sobre la visita']}")
                 if pd.notna(row['Evidencia Fotográfica']):
-                    path_img = os.path.join(img_base, str(row['Evidencia Fotográfica']))
-                    if os.path.exists(path_img):
-                        st.image(path_img, caption=row['Evidencia Fotográfica'])
-                    else:
-                        st.warning(f"No se encontró la imagen: {row['Evidencia Fotográfica']}")
+                    # Asumiendo que 'Evidencia Fotográfica' contiene URLs completas a imágenes
+                    try:
+                        st.image(row['Evidencia Fotográfica'], caption="Evidencia Fotográfica")
+                    except:
+                        st.warning("No se pudo cargar la imagen")
 
         st.subheader("📈 Actividad por día")
         productividad = df_form.groupby('Fecha_dia').size().reset_index(name="Formularios")
@@ -116,10 +132,18 @@ with tab2:
                     pdf.multi_cell(0, 10, texto.encode('latin-1', 'ignore').decode('latin-1'))
                 except:
                     pdf.multi_cell(0, 10, "⚠️ Error en contenido especial")
-            output_path = "temp_formularios.pdf"
-            pdf.output(output_path)
-            with open(output_path, "rb") as f:
-                st.download_button("📄 Descargar PDF", f.read(), file_name="resumen_formularios.pdf")
+            
+            # Guardar PDF en memoria
+            pdf_output = BytesIO()
+            pdf.output(pdf_output)
+            pdf_bytes = pdf_output.getvalue()
+            
+            st.download_button(
+                label="📄 Descargar PDF",
+                data=pdf_bytes,
+                file_name="resumen_formularios.pdf",
+                mime="application/pdf"
+            )
 
 with tab3:
     st.header("📍 Zonas visitadas (Mapa + Mapa de Calor)")
@@ -154,3 +178,16 @@ with tab3:
         st.dataframe(ranking)
         fig3 = px.bar(ranking, x='Empleado', y='Formularios', title="Ranking semanal")
         st.plotly_chart(fig3)
+        
+# --- Recomendaciones ---
+st.sidebar.header("Recomendaciones")
+st.sidebar.markdown("""
+- Implementar un sistema de notificaciones para alertas críticas.
+- Añadir un módulo de seguimiento de objetivos mensuales.
+- Integrar geocodificación previa para mostrar mapas de calor con latitud y longitud reales.
+- Añadir alertas personalizadas por vendedor y productos visitados.
+- Agregar análisis de tendencias mensuales para detectar patrones de mercado.
+- Incorporar módulo de feedback para que vendedores reporten incidencias o sugerencias.
+- Optimizar la UI para móvil con `streamlit-mobile` o diseño responsive.
+- Automatizar envío de reportes semanales por correo a gerencia.
+""")
