@@ -177,16 +177,4 @@ with tab3:
         st.dataframe(ranking)
         fig3 = px.bar(ranking, x='Empleado', y='Formularios', title="Ranking semanal")
         st.plotly_chart(fig3)
-        
-# --- Recomendaciones ---
-st.sidebar.header("Recomendaciones")
-st.sidebar.markdown("""
-- Implementar un sistema de notificaciones para alertas críticas.
-- Añadir un módulo de seguimiento de objetivos mensuales.
-- Integrar geocodificación previa para mostrar mapas de calor con latitud y longitud reales.
-- Añadir alertas personalizadas por vendedor y productos visitados.
-- Agregar análisis de tendencias mensuales para detectar patrones de mercado.
-- Incorporar módulo de feedback para que vendedores reporten incidencias o sugerencias.
-- Optimizar la UI para móvil con `streamlit-mobile` o diseño responsive.
-- Automatizar envío de reportes semanales por correo a gerencia.
-""")
+    
