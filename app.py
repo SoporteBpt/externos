@@ -40,7 +40,7 @@ formularios["Fecha de llenar"] = pd.to_datetime(formularios["Fecha de llenar"])
 formularios["Fecha_dia"] = formularios["Fecha de llenar"].dt.date
 
 # Sidebar
-st.sidebar.image("https://images.app.goo.gl/zgJmFPZPwzrTVeGK6", width=100)
+st.sidebar.image("https://images.app.goo.gl/zgJmFPZPwzrTVeGK6.png", width=100)
 st.sidebar.title("📅 Filtros de Fecha")
 modo = st.sidebar.selectbox("Modo", ["Diario", "Semanal", "Mensual"])
 fecha_seleccionada = st.sidebar.date_input("Selecciona fecha")
